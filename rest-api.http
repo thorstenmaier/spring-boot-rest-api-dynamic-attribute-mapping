@@ -1,0 +1,19 @@
+POST http://localhost:8080/person
+Accept: application/json
+Content-Type: application/json
+
+{
+  "firstname": "Thorsten",
+  "lastname": "Maier"
+}
+
+###
+
+PUT http://localhost:8080/person/1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": 1,
+  "firstname": "Thomas"
+}
