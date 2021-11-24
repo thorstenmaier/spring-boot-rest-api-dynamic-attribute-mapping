@@ -72,30 +72,30 @@ annotated with `@RequestBody` as usual.
 
 ```java
 @PutMapping("/person/{id}")
-public PersonDto update(@PathVariable("id") Long id,@RequestBody PersonDto personDto) {
+public PersonDto update(@PathVariable("id") Long id,@RequestBody PersonDto personDto){
 // ...
-}
+        }
 ```
 
 ## Mapping DTO to JPA entity
 
-The critical part is the mapping of the DTO into the JPA entity, because only set attributes should be taken over
-here. For the mapping, the use of a mapping framework is generally recommended. In this case, the library 
+The critical part is the mapping of the DTO into the JPA entity, because only set attributes should be taken over here.
+For the mapping, the use of a mapping framework is generally recommended. In this case, the library
 [MapStruct](https://mapstruct.org/) is used for this task.
 
-MapStruct has a functionality to check for the presence of an attribute in the source 
+MapStruct has a functionality to check for the presence of an attribute in the source
 ([Source presence checking](https://mapstruct.org/documentation/stable/reference/html/#source-presence-check)).
 
 All we have to do is to add a `boolean hasProperty()` method for all optional attributes in the DTO.
 
 ```java
-public boolean hasFirstname() {
-    return isOptionalPresent(firstname);
-}
+public boolean hasFirstname(){
+        return isOptionalPresent(firstname);
+        }
 
-private boolean isOptionalPresent(Optional<?> o) {
-    return o != null;
-}
+private boolean isOptionalPresent(Optional<?> o){
+        return o!=null;
+        }
 ```
 
 This already achieves a large part of the problem solution. We can now implement the following process:
@@ -109,9 +109,44 @@ Here is the quick-and-dirty implementation of this flow without error handling.
 
 ```java
 @PutMapping("/person/{id}")
-public PersonDto update(@PathVariable("id") Long id, @RequestBody PersonDto personDto) {
-    Person person = personRepository.findById(id).get(); // Error handling is missing
-    PersonMapper.INSTANCE.map(personDto, person);
-    return personMapper.map(personRepository.save(person));
+public PersonDto update(@PathVariable("id") Long id,@RequestBody PersonDto personDto){
+        Person person=personRepository.findById(id).get(); // Error handling is missing
+        PersonMapper.INSTANCE.map(personDto,person);
+        return personMapper.map(personRepository.save(person));
+        }
+```
+
+## JPA Dynamic Update
+
+Normally, Hibernate sends all fields in the update statement to the database during an update. Thus, regardless of the
+fields set, the following statement is sent to the database:
+
+```sql
+update person
+set firstname=?,
+    lastname=?
+where id = ?
+```
+
+The Hibernate annotation `@DynamicUpdate` can be used to customize this behavior.
+
+```java
+
+@Entity
+@DynamicUpdate
+public class Person {
+    // ...
 }
 ```
+
+With this annotation only changed fields are sent to the database. In our case only the firstname is set:
+
+```sql
+update person
+set firstname=?
+where id = ?
+```
+
+This reduces the amount of work on the database. However, this means more work on the Hibernate side, since the
+appropriate statement has to be created for each update.
+
