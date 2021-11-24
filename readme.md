@@ -94,7 +94,7 @@ public boolean hasFirstname() {
 }
 
 private boolean isOptionalPresent(Optional<?> o) {
-    return o != null && o.isPresent();
+    return o != null;
 }
 ```
 
